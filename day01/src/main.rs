@@ -25,5 +25,14 @@ fn main() -> io::Result<()> {
   let sum: i64 = l3.iter().sum();
   println!("Part 1: {}", sum);
 
+  let mut l4: Vec<i64> = Vec::new();
+
+  for l1 in l1.iter() {
+    l4.push(l1 * i64::try_from(l2.iter().filter(|&n| *n == *l1).count()).unwrap())
+  }
+
+  let sum: i64 = l4.iter().sum();
+  println!("Part 2: {}", sum);
+
   Ok(())
 }
