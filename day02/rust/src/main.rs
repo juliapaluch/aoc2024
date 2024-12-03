@@ -37,10 +37,9 @@ fn part_two(file: &File) -> usize {
                 .collect::<Vec<i64>>()
         })
         .filter(|s| {
-            let mut c: Vec<i64> = Vec::new();
             let mut safe_with_dampened = false;
             for k in 0..s.len() {
-                c = s.clone();
+                let mut c = s.clone();
                 c.remove(k);
                 if is_safe(&c) {
                     safe_with_dampened = true;
