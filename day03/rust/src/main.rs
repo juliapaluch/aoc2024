@@ -16,6 +16,7 @@ fn part_one(file: &File) -> i64 {
 }
 
 fn part_two(file: &File) -> i64 {
+    // I added a last do() to my input so I could avoid handling the dangling don't() edge case
     let reader = BufReader::new(file);
     let line = reader.lines().nth(0).unwrap().unwrap();
     let new_line = Regex::new(r"don't\(\).*?do\(\)")
