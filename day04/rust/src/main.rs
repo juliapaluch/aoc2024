@@ -38,25 +38,22 @@ impl Add for Pos {
 }
 
 fn find_match(grid: &Vec<Vec<char>>, cpos: Pos, index: usize, advance: Pos) -> i64 {
-    if cpos.x > MAX_POS || cpos.x < MIN_POS || cpos.y > MAX_POS || cpos.y < MIN_POS {
-        // this means we're in an invalid position in the grid so early exit
-        0
-    } else {
-        if grid[usize::try_from(cpos.x).ok().unwrap()][usize::try_from(cpos.y).ok().unwrap()]
-            == XMAS[index]
-        {
-            // we have a match
-            if index == 3 {
-                // and we're in the last possible XMAS state
-                1
-            } else {
-                find_match(grid, cpos + advance, index + 1, advance)
-            }
+    if check_char(grid, cpos, XMAS[index]) {
+        // we have a match
+        if index == 3 {
+            // and we're in the last possible XMAS state
+            1
         } else {
-            // no match
-            0
+            find_match(grid, cpos + advance, index + 1, advance)
         }
+    } else {
+        // no match
+        0
     }
+}
+
+fn valid(cpos: Pos) -> bool {
+    !(cpos.x > MAX_POS || cpos.x < MIN_POS || cpos.y > MAX_POS || cpos.y < MIN_POS)
 }
 
 fn find_xmas(grid: &Vec<Vec<char>>, cpos: Pos) -> bool {
@@ -85,8 +82,8 @@ fn find_xmas(grid: &Vec<Vec<char>>, cpos: Pos) -> bool {
 }
 
 fn get_char_at_pos(grid: &Vec<Vec<char>>, cpos: Pos) -> char {
-    if cpos.x > MAX_POS || cpos.x < MIN_POS || cpos.y > MAX_POS || cpos.y < MIN_POS {
-        // this means we're in an invalid position in the grid so early exit
+    if !valid(cpos) {
+        // this means we're in an invalid position in the grid so return X
         'X'
     } else {
         grid[usize::try_from(cpos.x).ok().unwrap()][usize::try_from(cpos.y).ok().unwrap()]
@@ -94,7 +91,7 @@ fn get_char_at_pos(grid: &Vec<Vec<char>>, cpos: Pos) -> char {
 }
 
 fn check_char(grid: &Vec<Vec<char>>, cpos: Pos, c: char) -> bool {
-    if cpos.x > MAX_POS || cpos.x < MIN_POS || cpos.y > MAX_POS || cpos.y < MIN_POS {
+    if !valid(cpos) {
         // this means we're in an invalid position in the grid so early exit
         false
     } else {
