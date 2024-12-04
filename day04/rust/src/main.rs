@@ -56,7 +56,7 @@ fn valid(cpos: Pos) -> bool {
     !(cpos.x > MAX_POS || cpos.x < MIN_POS || cpos.y > MAX_POS || cpos.y < MIN_POS)
 }
 
-fn find_xmas(grid: &Vec<Vec<char>>, cpos: Pos) -> bool {
+fn find_xmas(grid: &[Vec<char>], cpos: Pos) -> bool {
     let xmas_directions: Vec<Pos> = Vec::from([
         Pos { x: 1, y: -1 },
         Pos { x: 1, y: 1 },
@@ -72,7 +72,7 @@ fn find_xmas(grid: &Vec<Vec<char>>, cpos: Pos) -> bool {
             && possible_mas.iter().filter(|c| **c == 'S').count() == 2
         {
             // MAMSAS edge case
-            !(possible_mas == ['S', 'M', 'S', 'M']) && !(possible_mas == ['M', 'S', 'M', 'S'])
+            possible_mas != ['S', 'M', 'S', 'M'] && possible_mas != ['M', 'S', 'M', 'S']
         } else {
             false
         }
@@ -81,7 +81,7 @@ fn find_xmas(grid: &Vec<Vec<char>>, cpos: Pos) -> bool {
     }
 }
 
-fn get_char_at_pos(grid: &Vec<Vec<char>>, cpos: Pos) -> char {
+fn get_char_at_pos(grid: &[Vec<char>], cpos: Pos) -> char {
     if !valid(cpos) {
         // this means we're in an invalid position in the grid so return X
         'X'
@@ -90,7 +90,7 @@ fn get_char_at_pos(grid: &Vec<Vec<char>>, cpos: Pos) -> char {
     }
 }
 
-fn check_char(grid: &Vec<Vec<char>>, cpos: Pos, c: char) -> bool {
+fn check_char(grid: &[Vec<char>], cpos: Pos, c: char) -> bool {
     if !valid(cpos) {
         // this means we're in an invalid position in the grid so early exit
         false
