@@ -30,7 +30,7 @@ fn part_one(file: &File) -> u32 {
 
     updates
         .iter()
-        .filter(|v| v.len() > 0)
+        .filter(|v| !v.is_empty())
         .map(|x| {
             x.split(',')
                 .map(|n| n.parse::<u32>().unwrap())
@@ -43,8 +43,8 @@ fn part_one(file: &File) -> u32 {
                         .get(c)
                         .unwrap()
                         .iter()
-                        .filter(|p| x.contains(&p))
-                        .all(|p| (&x[0..i]).contains(&p))
+                        .filter(|p| x.contains(p))
+                        .all(|p| (x[0..i]).contains(p))
                 } else {
                     true
                 }
@@ -80,7 +80,7 @@ fn part_two(file: &File) -> u32 {
 
     updates
         .iter()
-        .filter(|v| v.len() > 0)
+        .filter(|v| !v.is_empty())
         .map(|x| {
             x.split(',')
                 .map(|n| n.parse::<u32>().unwrap())
@@ -96,9 +96,9 @@ fn part_two(file: &File) -> u32 {
                             .get(c)
                             .unwrap()
                             .iter()
-                            .filter(|p| x.contains(&p))
+                            .filter(|p| x.contains(p))
                             .for_each(|p| {
-                                if !(&new_x[0..=i]).contains(&p) {
+                                if !(new_x[0..=i]).contains(p) {
                                     let element =
                                         new_x.remove(new_x.iter().position(|e| e == p).unwrap());
                                     new_x.insert(i, element);
