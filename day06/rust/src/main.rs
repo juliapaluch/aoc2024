@@ -47,9 +47,8 @@ const POSITIONS: &[Pos] = &[
 ];
 
 const MIN_POS: i16 = 0;
-const MAX_POS: i16 = 129;
-
-// 5409
+const MAX_X: i16 = 129;
+const MAX_Y: i16 = 129;
 
 fn part_one(file: &File) -> usize {
     let reader = BufReader::new(file);
@@ -73,7 +72,7 @@ fn part_one(file: &File) -> usize {
     let mut distinct_positions = HashSet::new();
     let mut direction = 0;
 
-    while cpos.x > MIN_POS && cpos.x < MAX_POS && cpos.y > MIN_POS && cpos.y < MAX_POS {
+    while cpos.x > MIN_POS && cpos.x < MAX_X && cpos.y > MIN_POS && cpos.y < MAX_Y {
         let npos = cpos + POSITIONS[direction];
         let obstacle = guard_map[npos.y as usize][npos.x as usize] == '#';
         let next_direction = if direction == 3 { 0 } else { direction + 1 };
@@ -89,56 +88,94 @@ fn part_one(file: &File) -> usize {
 
 fn part_two(file: &File) -> usize {
     let reader = BufReader::new(file);
-    let mut guard_map: Vec<Vec<char>> = reader
+    let mut obstacles: Vec<Pos> = reader
         .lines()
-        .map(|x| x.unwrap().chars().collect())
-        .collect();
+        .enumerate()
+        .map(|(y, row)| {
+            row.unwrap()
+                .chars()
+                .enumerate()
+                .filter_map(move |(x, c)| match c {
+                    '#' => Some(Pos {
+                        x: x as i16,
+                        y: y as i16,
+                        direction: 4,
+                    }),
+                    '^' => Some(Pos {
+                        x: x as i16,
+                        y: y as i16,
+                        direction: 0,
+                    }),
+                    _ => None,
+                })
+                .collect::<Vec<_>>()
+        })
+        .flatten()
+        .collect::<Vec<Pos>>();
 
-    let cpos_y: i16 = guard_map.iter().position(|x| x.contains(&'^')).unwrap() as i16;
-    let cpos_x: i16 = guard_map[cpos_y as usize]
-        .iter()
-        .position(|x| x == &'^')
-        .unwrap() as i16;
-    let mut cpos: Pos = Pos {
-        x: cpos_x,
-        y: cpos_y,
-        direction: 0,
-    };
-    let opos = cpos;
-    guard_map[cpos.y as usize][cpos.x as usize] = '.';
+    let starting_position =
+        obstacles.remove(obstacles.iter().position(|p| p.direction == 0).unwrap());
+    let mut current_position = starting_position;
+    let mut possible_obstacles = HashSet::<Pos>::new();
+    let mut visited_states = HashSet::<Pos>::new();
 
-    let mut distinct_positions = HashSet::new();
-    distinct_positions.insert(cpos);
-    let mut test_distinct_positions: HashSet<Pos> = HashSet::new();
-    let mut obstacle_positions: HashSet<Pos> = HashSet::new();
-
-    println!("Starting at cpos {:?}", cpos);
-
-    while valid(cpos) {
-        if peek(&guard_map, &cpos) != '#' && cpos + POSITIONS[cpos.direction] != opos {
-            let mut ppos = cpos;
-            test_distinct_positions.clear();
-            test_distinct_positions.insert(ppos);
-            let mut obstacle_position = ppos + POSITIONS[ppos.direction];
-            ppos = turn_right(ppos);
-            while valid(ppos) {
-                ppos = advance(&guard_map, ppos);
-                println!("Checking {:?}", ppos);
-                if distinct_positions.contains(&ppos) || test_distinct_positions.contains(&ppos) {
-                    // loop detected
-                    obstacle_position.direction = 0;
-                    obstacle_positions.insert(obstacle_position);
-                    break;
+    while valid(current_position) {
+        visited_states.insert(current_position);
+        let next_position = move_forward(current_position);
+        if obstacles
+            .iter()
+            .any(|p| p.x == next_position.x && p.y == next_position.y)
+        {
+            current_position = turn_right(current_position);
+        } else {
+            if valid(next_position)
+                && !(next_position.x == starting_position.x
+                    && next_position.y == starting_position.y)
+            {
+                let obstacle = Pos {
+                    x: next_position.x,
+                    y: next_position.y,
+                    direction: 4,
+                };
+                if !possible_obstacles.contains(&obstacle) && !obstacles.contains(&obstacle) {
+                    obstacles.push(obstacle);
+                    if !possible_obstacles.contains(&obstacle)
+                        && obstacle_results_in_infinite_loop(&obstacles, starting_position)
+                    {
+                        possible_obstacles.insert(obstacle);
+                    }
+                    obstacles.pop();
                 }
-                test_distinct_positions.insert(ppos);
             }
+            current_position = next_position;
         }
-        cpos = advance(&guard_map, cpos);
-        println!("New cpos {:?}", cpos);
-        println!("Adding {:?} to distinct positions", cpos);
-        distinct_positions.insert(cpos);
     }
-    obstacle_positions.len()
+
+    possible_obstacles.len()
+}
+
+fn obstacle_results_in_infinite_loop(obstacles: &Vec<Pos>, starting_position: Pos) -> bool {
+    let mut visited_states: HashSet<Pos> = HashSet::new();
+    let mut current_position = starting_position;
+    while valid(current_position) {
+        let next_position = current_position + POSITIONS[current_position.direction];
+        if obstacles
+            .iter()
+            .any(|p| p.x == next_position.x && p.y == next_position.y)
+        {
+            current_position = turn_right(current_position);
+        } else {
+            current_position = next_position;
+        }
+        if !visited_states.insert(current_position) {
+            return true;
+        }
+    }
+    false
+}
+
+fn move_forward(pos: Pos) -> Pos {
+    pos + POSITIONS[pos.direction]
 }
 
 fn turn_right(mut pos: Pos) -> Pos {
@@ -151,21 +188,7 @@ fn turn_right(mut pos: Pos) -> Pos {
 }
 
 fn valid(pos: Pos) -> bool {
-    pos.x > MIN_POS && pos.x < MAX_POS && pos.y > MIN_POS && pos.y < MAX_POS
-}
-
-fn advance(guard_map: &Vec<Vec<char>>, mut cpos: Pos) -> Pos {
-    if peek(guard_map, &cpos) == '#' {
-        cpos = turn_right(cpos);
-        return cpos;
-    }
-    cpos + POSITIONS[cpos.direction]
-}
-
-fn peek(guard_map: &Vec<Vec<char>>, cpos: &Pos) -> char {
-    let mut npos = *cpos + POSITIONS[cpos.direction];
-    npos.direction = cpos.direction;
-    guard_map[npos.y as usize][npos.x as usize]
+    pos.x >= MIN_POS && pos.x <= MAX_X && pos.y >= MIN_POS && pos.y <= MAX_Y
 }
 
 fn main() -> io::Result<()> {
