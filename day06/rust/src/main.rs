@@ -52,35 +52,51 @@ const MAX_Y: i16 = 129;
 
 fn part_one(file: &File) -> usize {
     let reader = BufReader::new(file);
-    let mut guard_map: Vec<Vec<char>> = reader
+    let mut obstacles: Vec<Pos> = reader
         .lines()
-        .map(|x| x.unwrap().chars().collect())
-        .collect();
+        .enumerate()
+        .map(|(y, row)| {
+            row.unwrap()
+                .chars()
+                .enumerate()
+                .filter_map(move |(x, c)| match c {
+                    '#' => Some(Pos {
+                        x: x as i16,
+                        y: y as i16,
+                        direction: 4,
+                    }),
+                    '^' => Some(Pos {
+                        x: x as i16,
+                        y: y as i16,
+                        direction: 0,
+                    }),
+                    _ => None,
+                })
+                .collect::<Vec<_>>()
+        })
+        .flatten()
+        .collect::<Vec<Pos>>();
 
-    let cpos_y: i16 = guard_map.iter().position(|x| x.contains(&'^')).unwrap() as i16;
-    let cpos_x: i16 = guard_map[cpos_y as usize]
-        .iter()
-        .position(|x| x == &'^')
-        .unwrap() as i16;
-    let mut cpos: Pos = Pos {
-        x: cpos_x,
-        y: cpos_y,
-        direction: 0,
-    };
-    guard_map[cpos.y as usize][cpos.x as usize] = '.';
+    let starting_position =
+        obstacles.remove(obstacles.iter().position(|p| p.direction == 0).unwrap());
+    let mut current_position = starting_position;
 
-    let mut distinct_positions = HashSet::new();
-    let mut direction = 0;
+    let mut distinct_positions: HashSet<Pos> = HashSet::new();
 
-    while cpos.x > MIN_POS && cpos.x < MAX_X && cpos.y > MIN_POS && cpos.y < MAX_Y {
-        let npos = cpos + POSITIONS[direction];
-        let obstacle = guard_map[npos.y as usize][npos.x as usize] == '#';
-        let next_direction = if direction == 3 { 0 } else { direction + 1 };
-        if obstacle {
-            direction = next_direction;
+    while valid(current_position) {
+        distinct_positions.insert(Pos {
+            x: current_position.x,
+            y: current_position.y,
+            direction: 4,
+        });
+        let next_position = move_forward(current_position);
+        if obstacles
+            .iter()
+            .any(|p| p.x == next_position.x && p.y == next_position.y)
+        {
+            current_position = turn_right(current_position)
         } else {
-            cpos = npos;
-            distinct_positions.insert(cpos);
+            current_position = next_position;
         }
     }
     distinct_positions.len()
