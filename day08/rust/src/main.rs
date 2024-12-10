@@ -2,7 +2,6 @@ use std::{
     collections::HashSet,
     fs::File,
     io::{self, BufRead, BufReader, Seek},
-    thread::current,
 };
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
